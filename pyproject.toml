@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "appraisal-dex"
+version         = "1.0.0"
+description     = "S-Rank Android Binary Vulnerability Appraisal Tool"
+readme          = "README.md"
+license         = { text = "MIT" }
+requires-python = ">=3.10"
+authors         = [{ name = "Appraisal: DEX" }]
+keywords        = ["android", "security", "apk", "vulnerability", "static-analysis", "pentest"]
+classifiers     = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Security",
+]
+
+dependencies = [
+    "androguard>=3.3.5",
+    "click>=8.1",
+    "rich>=13.0",
+    "lxml>=4.9",
+    "colorama>=0.4",
+    "networkx>=3.0",
+    "jinja2>=3.1",
+    "requests>=2.31",
+    "pyyaml>=6.0",
+    "tabulate>=0.9",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov", "black", "ruff", "mypy"]
+
+[project.scripts]
+appraisal-dex = "appraisal.cli:main"
+
+[project.urls]
+Homepage   = "https://github.com/yourusername/appraisal-dex"
+Repository = "https://github.com/yourusername/appraisal-dex"
+Issues     = "https://github.com/yourusername/appraisal-dex/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["appraisal*"]
+
+[tool.black]
+line-length    = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+select      = ["E", "F", "W", "I"]
+ignore      = ["E501"]
+
+[tool.mypy]
+python_version         = "3.10"
+warn_return_any        = true
+warn_unused_configs    = true
+ignore_missing_imports = true
