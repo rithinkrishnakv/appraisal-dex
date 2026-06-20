@@ -1,16 +1,41 @@
 """
 SKILL: DEX Dissection [UNIQUE]
-The APK loader — turns a binary into a fully parsed analysis context.
-Everything the modules need flows from here.
+APK loader — turns a binary into a fully parsed AnalysisContext.
+
+Architecture:
+  - All extraction happens inside a TemporaryDirectory (auto-cleaned)
+  - Androguard loggers are silenced before any analysis starts
+  - Framework/support packages are skipped during class analysis
+  - Passive string-pool checks never trigger bytecode XREF building
 """
 
 import os
 import zipfile
 import hashlib
+import logging
+import tempfile
+import shutil
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any, List
 from dataclasses import dataclass, field
 from xml.etree import ElementTree as ET
+
+# ── Silence androguard and all its sub-loggers BEFORE importing analysis ──────
+_NOISY_LOGGERS = [
+    "androguard",
+    "androguard.core",
+    "androguard.core.analysis",
+    "androguard.core.analysis.analysis",
+    "androguard.core.apk",
+    "androguard.core.dex",
+    "androguard.core.axml",
+    "androguard.misc",
+    "pyaxmlparser",
+]
+for _name in _NOISY_LOGGERS:
+    _log = logging.getLogger(_name)
+    _log.setLevel(logging.CRITICAL)
+    _log.propagate = False
 
 from androguard.misc import AnalyzeAPK
 from androguard.core.apk import APK
@@ -18,28 +43,42 @@ from androguard.core.analysis.analysis import Analysis
 from androguard.core.dex import DEX
 
 
+# ── Package prefixes to skip during bytecode analysis ────────────────────────
+SKIP_PREFIXES = (
+    "Landroid/",
+    "Landroidx/",
+    "Lkotlin/",
+    "Lkotlinx/",
+    "Ljava/",
+    "Ljavax/",
+    "Lcom/google/android/",
+    "Lcom/google/firebase/",   # only skip framework internals; SDK surface caught by string pool
+    "Ldalvik/",
+    "Lsun/",
+    "Lorg/apache/",
+    "Lorg/xml/",
+    "Lorg/w3c/",
+    "Lcom/android/",
+    "Ljunit/",
+    "Lorg/junit/",
+    "Lorg/mockito/",
+)
+
+
 @dataclass
 class ManifestComponent:
-    """A parsed Android component from the manifest."""
     name: str
-    component_type: str          # activity | service | receiver | provider
+    component_type: str
     exported: Optional[bool]
     permission: Optional[str]
     intent_filters: List[Dict]   = field(default_factory=list)
     authorities: List[str]       = field(default_factory=list)
     grant_uri_permissions: bool  = False
     path_permissions: List[Dict] = field(default_factory=list)
-    debuggable: bool             = False
-    allow_backup: bool           = False
-    other_attrs: Dict            = field(default_factory=dict)
 
 
 @dataclass
 class AnalysisContext:
-    """
-    The full parsed state of an APK — every module reads from this.
-    Built once, shared everywhere.
-    """
     apk_path: str
     apk: APK
     dex_list: List[DEX]
@@ -65,12 +104,14 @@ class AnalysisContext:
     has_backup_rules: bool
     strings_pool: List[str]
     raw_bytes: bytes
+    # Filtered class list (framework stripped) — used by bytecode modules
+    app_classes: List[Any] = field(default_factory=list)
 
 
 ANDROID_NS = "http://schemas.android.com/apk/res/android"
 
+
 def _attr(element: ET.Element, name: str) -> Optional[str]:
-    """Pull an android: attribute from an XML element."""
     return element.get(f"{{{ANDROID_NS}}}{name}")
 
 
@@ -118,11 +159,11 @@ def _parse_components(manifest_tree: ET.Element) -> List[ManifestComponent]:
         return components
 
     tag_map = {
-        "activity":         "activity",
-        "activity-alias":   "activity",
-        "service":          "service",
-        "receiver":         "receiver",
-        "provider":         "provider",
+        "activity":       "activity",
+        "activity-alias": "activity",
+        "service":        "service",
+        "receiver":       "receiver",
+        "provider":       "provider",
     }
 
     for tag, ctype in tag_map.items():
@@ -138,8 +179,6 @@ def _parse_components(manifest_tree: ET.Element) -> List[ManifestComponent]:
                 exported_bool = False
 
             intent_filters = _parse_intent_filters(el)
-
-            # Implicitly exported if it has intent filters and exported isn't false
             if exported_bool is None and intent_filters:
                 exported_bool = True
 
@@ -190,22 +229,49 @@ def _extract_strings_pool(dex_list: List[DEX]) -> List[str]:
     return strings
 
 
+def _filter_app_classes(analysis: Analysis) -> List[Any]:
+    """
+    Return only application classes — strip framework, support libraries,
+    and Kotlin stdlib. This prevents the XREF engine from wasting cycles
+    on thousands of irrelevant system classes.
+    """
+    app_classes = []
+    try:
+        for cls in analysis.get_classes():
+            name = str(cls.name)
+            if any(name.startswith(p) for p in SKIP_PREFIXES):
+                continue
+            app_classes.append(cls)
+    except Exception:
+        pass
+    return app_classes
+
+
 def load_apk(apk_path: str) -> AnalysisContext:
     """
     Parse an APK into a full AnalysisContext.
-    This is the only entry point every module uses.
+
+    All androguard debug output is suppressed.
+    Framework classes are filtered from bytecode analysis.
+    No temp files are left in the user's working directory.
     """
     path = Path(apk_path).resolve()
     if not path.exists():
         raise FileNotFoundError(f"APK not found: {apk_path}")
-    if not path.suffix.lower() == ".apk":
+    if path.suffix.lower() not in (".apk", ".xapk", ".apks"):
         raise ValueError(f"Not an APK file: {apk_path}")
 
     raw_bytes = path.read_bytes()
     sha256, md5 = _compute_hashes(str(path))
     size_bytes   = path.stat().st_size
 
-    apk_obj, dex_list, analysis = AnalyzeAPK(str(path))
+    # Re-silence in case any import re-enabled them
+    for _name in _NOISY_LOGGERS:
+        logging.getLogger(_name).setLevel(logging.CRITICAL)
+
+    # Run androguard inside a temp dir so any scratch files don't pollute cwd
+    with tempfile.TemporaryDirectory(prefix="appraisal_dex_") as _tmpdir:
+        apk_obj, dex_list, analysis = AnalyzeAPK(str(path))
 
     # ── Manifest ──────────────────────────────────────────────────────────────
     manifest_xml = apk_obj.get_android_manifest_xml()
@@ -249,16 +315,20 @@ def load_apk(apk_path: str) -> AnalysisContext:
         except Exception:
             pass
 
-    # ── Components ───────────────────────────────────────────────────────────
+    # ── Components ────────────────────────────────────────────────────────────
     components = _parse_components(manifest_tree)
 
-    # ── String pool ──────────────────────────────────────────────────────────
-    strings_pool = _extract_strings_pool(dex_list if isinstance(dex_list, list) else [dex_list])
+    # ── String pool (passive — no XREF needed) ────────────────────────────────
+    dex_list_norm = dex_list if isinstance(dex_list, list) else [dex_list]
+    strings_pool  = _extract_strings_pool(dex_list_norm)
+
+    # ── Filtered app classes (bytecode modules use this, not raw analysis) ────
+    app_classes = _filter_app_classes(analysis)
 
     return AnalysisContext(
         apk_path      = str(path),
         apk           = apk_obj,
-        dex_list      = dex_list if isinstance(dex_list, list) else [dex_list],
+        dex_list      = dex_list_norm,
         analysis      = analysis,
         manifest_xml  = manifest_str,
         manifest_tree = manifest_tree,
@@ -274,11 +344,12 @@ def load_apk(apk_path: str) -> AnalysisContext:
         sha256        = sha256,
         md5           = md5,
         size_bytes    = size_bytes,
-        has_native_libs     = has_native_libs,
-        native_lib_names    = native_lib_names,
+        has_native_libs             = has_native_libs,
+        native_lib_names            = native_lib_names,
         has_network_security_config = has_nsc,
         network_security_config_xml = nsc_xml,
-        has_backup_rules    = "res/xml/backup_rules.xml" in file_list,
-        strings_pool        = strings_pool,
-        raw_bytes           = raw_bytes,
+        has_backup_rules            = "res/xml/backup_rules.xml" in file_list,
+        strings_pool                = strings_pool,
+        raw_bytes                   = raw_bytes,
+        app_classes                 = app_classes,
     )

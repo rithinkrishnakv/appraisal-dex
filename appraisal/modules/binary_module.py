@@ -55,7 +55,7 @@ class BinaryHardeningModule(BaseModule):
         total_class_count = 0
 
         try:
-            for cls in ctx.analysis.get_classes():
+            for cls in ctx.app_classes:
                 cls_name = str(cls.name)
                 # Skip android/java system classes
                 if cls_name.startswith("Landroid/") or cls_name.startswith("Ljava/"):
@@ -417,7 +417,7 @@ class BinaryHardeningModule(BaseModule):
         ]
         try:
             sensitive_classes = []
-            for cls in ctx.analysis.get_classes():
+            for cls in ctx.app_classes:
                 cls_str = str(cls.name)
                 for pat in sensitive_class_patterns:
                     if re.search(pat, cls_str):

@@ -316,7 +316,7 @@ class SupplyChainSentinelModule(BaseModule):
 
         # Also scan class names
         try:
-            for cls in ctx.analysis.get_classes():
+            for cls in ctx.app_classes:
                 cls_name = str(cls.name).replace("/", ".").strip("L;")
                 for pattern in INTERNAL_PKG_PATTERNS:
                     if re.search(pattern, cls_name, re.IGNORECASE):
@@ -419,7 +419,7 @@ class SupplyChainSentinelModule(BaseModule):
         if found:
             test_classes = []
             try:
-                for cls in ctx.analysis.get_classes():
+                for cls in ctx.app_classes:
                     cls_str = str(cls.name).lower()
                     if any(t.lower() in cls_str for t in ["test", "mock", "espresso", "junit"]):
                         test_classes.append(str(cls.name))

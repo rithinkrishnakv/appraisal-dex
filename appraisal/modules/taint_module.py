@@ -201,7 +201,7 @@ class TaintAnalysisModule(BaseModule):
         sink_set   = {(s.class_name.replace(".", "/"), s.method_name): s for s in TAINT_SINKS}
 
         try:
-            for cls in ctx.analysis.get_classes():
+            for cls in ctx.app_classes:
                 cls_name = str(cls.name)
                 for method in cls.get_methods():
                     method_name = str(method.name)
@@ -350,7 +350,7 @@ class TaintAnalysisModule(BaseModule):
         found_in: List[str] = []
 
         try:
-            for cls in ctx.analysis.get_classes():
+            for cls in ctx.app_classes:
                 for method in cls.get_methods():
                     try:
                         m = method.get_method()
@@ -398,7 +398,7 @@ class TaintAnalysisModule(BaseModule):
         found_in: List[str] = []
 
         try:
-            for cls in ctx.analysis.get_classes():
+            for cls in ctx.app_classes:
                 for method in cls.get_methods():
                     try:
                         m = method.get_method()
@@ -464,7 +464,7 @@ class TaintAnalysisModule(BaseModule):
         for pattern, description in dangerous_patterns:
             found_in: List[str] = []
             try:
-                for cls in ctx.analysis.get_classes():
+                for cls in ctx.app_classes:
                     for method in cls.get_methods():
                         try:
                             m = method.get_method()

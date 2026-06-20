@@ -124,7 +124,7 @@ class SDKFingerprintModule(BaseModule):
         detected = []
         try:
             class_names = set()
-            for cls in ctx.analysis.get_classes():
+            for cls in ctx.app_classes:
                 cls_str = str(cls.name).replace("/", ".").strip("L;")
                 class_names.add(cls_str)
 

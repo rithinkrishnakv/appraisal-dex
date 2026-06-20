@@ -148,7 +148,7 @@ class BinderBreachModule(BaseModule):
         mismatch_candidates = []
 
         try:
-            for cls in ctx.analysis.get_classes():
+            for cls in ctx.app_classes:
                 cls_name = str(cls.name)
                 method_names = [str(m.name) for m in cls.get_methods()]
 
@@ -242,7 +242,7 @@ class BinderBreachModule(BaseModule):
         aidl_classes = []
 
         try:
-            for cls in ctx.analysis.get_classes():
+            for cls in ctx.app_classes:
                 cls_name = str(cls.name)
                 method_names = [str(m.name) for m in cls.get_methods()]
 

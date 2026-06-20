@@ -56,6 +56,8 @@ def make_ctx(strings=None, permissions=None, components=None,
 
     # Mock analysis
     ctx.analysis.get_classes.return_value = []
+    ctx.app_classes = []
+    ctx.app_classes = []
     ctx.dex_list = []
     return ctx
 
@@ -169,6 +171,7 @@ class TestSupplyChainSentinel:
         mock_cls = MagicMock()
         mock_cls.name = "Lcom/example/LoginActivityTest;"
         ctx.analysis.get_classes.return_value = [mock_cls]
+        ctx.app_classes = [mock_cls]
         mock_cls.get_methods.return_value = []
 
         m = SupplyChainSentinelModule()
