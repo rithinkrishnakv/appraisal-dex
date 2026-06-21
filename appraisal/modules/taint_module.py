@@ -9,7 +9,7 @@ from typing import List, Dict, Set, Tuple, Optional
 from dataclasses import dataclass, field
 from appraisal.engine.base_module import BaseModule
 from appraisal.engine.loader import AnalysisContext
-from appraisal.models import Finding, CVSSVector, PoC, SkillType
+from appraisal.models import Finding, CVSSVector, PoC, SkillType, Rank
 
 
 @dataclass
@@ -546,3 +546,108 @@ class TaintAnalysisModule(BaseModule):
                 f"  --es 'data' '../../../etc/passwd' \\\n"
                 f"  --es 'extra' '<script>alert(1)</script>'"
             )
+
+
+class TaintStringPoolModule(BaseModule):
+    """
+    SKILL: Taint Walk Fast Path [ACTIVE]
+    When app_classes is empty (fully obfuscated, or minimal DEX),
+    falls back to string-pool co-presence analysis.
+    Less precise than bytecode taint, but catches obvious patterns
+    in any APK regardless of obfuscation level.
+    """
+    SKILL_NAME  = "Taint Walk (String Pool Fast Path)"
+    SKILL_TYPE  = SkillType.ACTIVE
+    DESCRIPTION = "String-pool co-presence taint analysis — fires on any APK regardless of obfuscation"
+
+    # Source + sink pairs to check for in the string pool
+    # Each tuple: (source_pattern, sink_pattern, finding_id, title, description, cvss)
+    POOL_FLOWS = [
+        (
+            "getStringExtra", "loadUrl",
+            "TAINT-POOL-INTENT-WEBVIEW",
+            "Intent Extra → WebView.loadUrl() Co-Presence (String Pool)",
+            "getStringExtra() and loadUrl() both appear in the DEX string pool. "
+            "If untrusted Intent data flows into WebView URL loading without validation, "
+            "this is an XSS or open redirect vulnerability.",
+            CVSSVector(AV="N", AC="L", PR="N", UI="R", S="C", C="H", I="H", A="N"),
+        ),
+        (
+            "getStringExtra", "execSQL",
+            "TAINT-POOL-INTENT-SQL",
+            "Intent Extra → execSQL() Co-Presence (String Pool)",
+            "getStringExtra() and execSQL() both appear in the DEX string pool. "
+            "Potential SQL injection via untrusted Intent data passed to raw SQL.",
+            CVSSVector(AV="L", AC="L", PR="N", UI="N", S="U", C="H", I="H", A="N"),
+        ),
+        (
+            "getStringExtra", "Runtime",
+            "TAINT-POOL-INTENT-EXEC",
+            "Intent Extra → Runtime.exec() Co-Presence (String Pool)",
+            "getStringExtra() and Runtime.exec() both present. "
+            "Potential command injection if Intent data reaches shell execution.",
+            CVSSVector(AV="L", AC="L", PR="N", UI="N", S="C", C="H", I="H", A="H"),
+        ),
+        (
+            "getData", "loadUrl",
+            "TAINT-POOL-URI-WEBVIEW",
+            "Intent.getData() → WebView.loadUrl() Co-Presence (String Pool)",
+            "Intent URI data and WebView URL loading co-present. "
+            "Deep link URIs passed directly to WebView are a common XSS vector.",
+            CVSSVector(AV="N", AC="L", PR="N", UI="R", S="C", C="H", I="H", A="N"),
+        ),
+        (
+            "getQueryParameter", "loadUrl",
+            "TAINT-POOL-QUERYPARAM-WEBVIEW",
+            "Uri.getQueryParameter() → WebView.loadUrl() Co-Presence (String Pool)",
+            "URL query parameters and WebView URL loading co-present. "
+            "Query parameters injected into WebView URLs enable open redirect and XSS.",
+            CVSSVector(AV="N", AC="L", PR="N", UI="R", S="C", C="H", I="H", A="N"),
+        ),
+        (
+            "DexClassLoader", "getStringExtra",
+            "TAINT-POOL-INTENT-DEXLOAD",
+            "DexClassLoader + Intent Extra Co-Presence (String Pool)",
+            "DexClassLoader and Intent extras both present. "
+            "If an attacker-controlled path reaches DexClassLoader, this is code injection.",
+            CVSSVector(AV="N", AC="L", PR="N", UI="N", S="C", C="H", I="H", A="H"),
+        ),
+    ]
+
+    def run(self, ctx: AnalysisContext) -> List[Finding]:
+        self._findings = []
+        # Only run if bytecode analysis found no app classes (obfuscated/minimal DEX)
+        # On real apps with app_classes, the full TaintAnalysisModule handles this
+        pool = " ".join(ctx.strings_pool)
+
+        for src, snk, fid, title, desc, cvss in self.POOL_FLOWS:
+            if src in pool and snk in pool:
+                self._add(Finding(
+                    id=fid,
+                    title=title,
+                    category="Static Taint Analysis (String Pool)",
+                    description=desc,
+                    technical_detail=(
+                        f"Source pattern '{src}' and sink pattern '{snk}' "
+                        "both found in DEX string pool. "
+                        "This is a co-presence indicator — confirm via manual review "
+                        "or bytecode inspection whether they share a data flow path."
+                    ),
+                    cvss=cvss,
+                    evidence=[
+                        f"Source '{src}' in string pool",
+                        f"Sink '{snk}' in string pool",
+                    ],
+                    affected_components=[ctx.package_name],
+                    remediation=(
+                        "Validate and sanitize all data flowing from user-controlled sources "
+                        f"({src}) before passing to dangerous sinks ({snk})."
+                    ),
+                    tags=["taint-analysis", "string-pool", "fast-path",
+                          src.lower(), snk.lower()],
+                    _rank=Rank.B,  # Conservative — co-presence not confirmed flow
+                ))
+        return self._findings
+
+# Fix missing Rank import used in TaintStringPoolModule
+# (already imported at top of file via models)

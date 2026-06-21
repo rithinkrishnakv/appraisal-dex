@@ -519,7 +519,7 @@ class TestMisconfigStorageModule:
 class TestFullModuleRegistry:
     def test_all_14_modules_registered(self):
         from appraisal.engine.orchestrator import ALL_MODULES
-        assert len(ALL_MODULES) == 14
+        assert len(ALL_MODULES) == 15
 
     def test_all_modules_have_required_attributes(self):
         from appraisal.engine.orchestrator import ALL_MODULES

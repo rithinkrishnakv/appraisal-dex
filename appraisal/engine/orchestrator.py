@@ -15,7 +15,7 @@ from appraisal.models import AppraisalResult, Finding, Rank
 from appraisal.modules.manifest_module          import ManifestModule
 from appraisal.modules.component_module         import ComponentExposureModule
 from appraisal.modules.deeplink_module          import DeepLinkModule
-from appraisal.modules.taint_module             import TaintAnalysisModule
+from appraisal.modules.taint_module             import TaintAnalysisModule, TaintStringPoolModule
 from appraisal.modules.crypto_module            import CryptoModule
 from appraisal.modules.binary_module            import BinaryHardeningModule
 from appraisal.modules.sdk_module               import SDKFingerprintModule
@@ -35,6 +35,7 @@ ALL_MODULES: List[Type[BaseModule]] = [
     ComponentExposureModule,   # [ACTIVE]  Component Exposure Scanner
     DeepLinkModule,            # [ACTIVE]  Deep Link Interceptor
     TaintAnalysisModule,       # [ACTIVE]  Taint Walk
+    TaintStringPoolModule,    # [ACTIVE]  Taint Walk (String Pool Fast Path)
     CryptoModule,              # [UNIQUE]  Cipher Sight
     BinaryHardeningModule,     # [UNIQUE]  Binary Hardening Auditor
     SDKFingerprintModule,      # [HIDDEN]  Supply Chain Scanner

@@ -161,10 +161,16 @@ def scan(
       appraisal-dex scan target.apk --min-rank S --no-poc
       appraisal-dex scan target.apk --skip "Taint Walk"
     """
-    # In debug mode, let androguard logs through
+    # In debug mode, restore full androguard logging (stdlib + loguru)
     if debug_mode:
         for _n in _SILENCE:
             logging.getLogger(_n).setLevel(logging.DEBUG)
+        try:
+            from loguru import logger as _dlogger
+            _dlogger.remove()
+            _dlogger.add(sys.stderr, level="DEBUG")
+        except Exception:
+            pass
 
     if not no_banner:
         print_banner()
