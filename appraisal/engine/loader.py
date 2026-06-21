@@ -37,6 +37,15 @@ for _name in _NOISY_LOGGERS:
     _log.setLevel(logging.CRITICAL)
     _log.propagate = False
 
+# Silence loguru (androguard uses it instead of stdlib logging)
+try:
+    from loguru import logger as _loguru_logger
+    import sys as _sys_loguru
+    _loguru_logger.remove()
+    _loguru_logger.add(_sys_loguru.stderr, level="CRITICAL")
+except Exception:
+    pass
+
 from androguard.misc import AnalyzeAPK
 from androguard.core.apk import APK
 from androguard.core.analysis.analysis import Analysis
@@ -288,8 +297,14 @@ def load_apk(apk_path: str) -> AnalysisContext:
     # ── Basic metadata ────────────────────────────────────────────────────────
     package_name  = apk_obj.get_package() or "unknown"
     app_name      = apk_obj.get_app_name() or package_name
-    version_name  = apk_obj.get_androidversion_name() or "unknown"
-    version_code  = apk_obj.get_androidversion_code() or "0"
+    try:
+        version_name = apk_obj.get_androidversion_name() or "unknown"
+    except Exception:
+        version_name = "unknown"
+    try:
+        version_code = apk_obj.get_androidversion_code() or "0"
+    except Exception:
+        version_code = "0"
     min_sdk       = int(apk_obj.get_min_sdk_version() or 1)
     target_sdk    = int(apk_obj.get_target_sdk_version() or 1)
     permissions   = list(apk_obj.get_permissions() or [])

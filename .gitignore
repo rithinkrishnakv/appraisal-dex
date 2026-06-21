@@ -26,6 +26,7 @@ pocs/
 
 # APK files (don't commit test targets)
 *.apk
+!tests/samples/vuln_test.apk
 !tests/samples/.gitkeep
 
 # IDE

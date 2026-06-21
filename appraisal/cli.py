@@ -21,6 +21,15 @@ for _n in _SILENCE:
     _l.handlers = []
     _l.propagate = False
 
+# Silence loguru (androguard uses it instead of stdlib logging)
+try:
+    from loguru import logger as _loguru_logger
+    import sys as _sys
+    _loguru_logger.remove()
+    _loguru_logger.add(_sys.stderr, level="CRITICAL")
+except Exception:
+    pass
+
 # Also silence root if nothing else catches it
 logging.getLogger().setLevel(logging.WARNING)
 
