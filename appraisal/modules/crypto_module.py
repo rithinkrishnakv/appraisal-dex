@@ -144,7 +144,7 @@ class CryptoModule(BaseModule):
                 else:
                     flat_matches.append(str(m))
 
-            finding_id = f"CRYPTO-SECRET-{tag.upper()[:20]}"
+            finding_id = f"CRYPTO-SECRET-{tag.upper()}"
             if finding_id in seen_ids:
                 continue
             seen_ids.add(finding_id)

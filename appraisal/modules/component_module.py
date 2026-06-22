@@ -72,7 +72,7 @@ class ComponentExposureModule(BaseModule):
                               C="H" if is_sensitive else "L",
                               I="H" if is_sensitive else "L", A="N")
             self._add(Finding(
-                id=f"COMP-ACT-{name[-30:].replace('.', '_')}",
+                id=f"COMP-ACT-{ctx.package_name}_{name.split('.')[-1]}",
                 title=f"Unprotected Exported Activity: {name.split('.')[-1]}",
                 category="Component Exposure",
                 description=(
@@ -129,7 +129,7 @@ class ComponentExposureModule(BaseModule):
 
         if not has_protection:
             self._add(Finding(
-                id=f"COMP-SVC-{name[-30:].replace('.', '_')}",
+                id=f"COMP-SVC-{ctx.package_name}_{name.split('.')[-1]}",
                 title=f"Unprotected Exported Service: {name.split('.')[-1]}",
                 category="Component Exposure",
                 description=(
@@ -187,7 +187,7 @@ class ComponentExposureModule(BaseModule):
 
         if not has_protection:
             self._add(Finding(
-                id=f"COMP-RCV-{name[-30:].replace('.', '_')}",
+                id=f"COMP-RCV-{ctx.package_name}_{name.split('.')[-1]}",
                 title=f"Unprotected Exported Broadcast Receiver: {name.split('.')[-1]}",
                 category="Component Exposure",
                 description=(
@@ -259,7 +259,7 @@ class ComponentExposureModule(BaseModule):
             ]
 
             self._add(Finding(
-                id=f"COMP-PRV-{authority[:30].replace('.', '_').replace('/', '_')}",
+                id=f"COMP-PRV-{ctx.package_name}_{authority.split('.')[-1].replace('/', '_')}",
                 title=f"Exported Content Provider: {name.split('.')[-1]} ({authority})",
                 category="Content Provider Exposure",
                 description=(
@@ -341,7 +341,7 @@ class ComponentExposureModule(BaseModule):
             # Grant URI permissions abuse
             if comp.grant_uri_permissions:
                 self._add(Finding(
-                    id=f"COMP-PRV-GRANT-{authority[:20].replace('.','_')}",
+                    id=f"COMP-PRV-GRANT-{ctx.package_name}_{authority.split('.')[-1].replace('/', '_')}",
                     title=f"grantUriPermissions Enabled on Provider: {authority}",
                     category="Content Provider Exposure",
                     description=(
@@ -386,7 +386,7 @@ class ComponentExposureModule(BaseModule):
                 ):
                     name = self._short(comp.name, ctx.package_name)
                     self._add(Finding(
-                        id=f"COMP-IMPLICIT-{name[-25:].replace('.','_')}",
+                        id=f"COMP-IMPLICIT-{ctx.package_name}_{name.split('.')[-1]}",
                         title=f"Implicit Intent Interception Risk: {name.split('.')[-1]}",
                         category="Intent Security",
                         description=(

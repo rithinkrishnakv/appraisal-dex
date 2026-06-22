@@ -140,6 +140,8 @@ class Finding:
 
     @property
     def cvss_score(self) -> float:
+        if self._rank:
+            return self._rank.base_score
         return self.cvss.score()
 
     def to_dict(self) -> Dict[str, Any]:
