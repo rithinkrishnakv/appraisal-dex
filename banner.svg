@@ -1,0 +1,132 @@
+<svg width="1200" height="320" viewBox="0 0 1200 320" xmlns="http://www.w3.org/2000/svg">
+<style>
+  @keyframes pulse    { 0%,100% { opacity:1 }   50% { opacity:.25 } }
+  @keyframes pulseHard{ 0%,100% { opacity:1 }   50% { opacity:.15 } }
+  @keyframes blink    { 0%,55%  { opacity:1 }   56%,100% { opacity:0 } }
+  @keyframes shimmer  { 0%,100% { stop-color:#2bdca0 } 50% { stop-color:#ff3b3b } }
+  @keyframes caution  { 0%,100% { opacity:1 }   50% { opacity:.4 } }
+  .pulseSlow  { animation: pulse 2.4s ease-in-out infinite; }
+  .pulseMed   { animation: pulse 1.5s ease-in-out infinite; }
+  .pulseFast  { animation: pulseHard 0.85s ease-in-out infinite; }
+  .cursor     { animation: blink 1s steps(1) infinite; }
+  .midStop    { animation: shimmer 3s ease-in-out infinite; }
+  .caution    { animation: caution 1.6s ease-in-out infinite; }
+  #scanbar    { animation: sweep 3.8s linear infinite; }
+  @keyframes sweep {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(1200px); }
+  }
+</style>
+
+<defs>
+  <linearGradient id="titleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#2bdca0"/>
+    <stop offset="50%" class="midStop" stop-color="#ff3b3b"/>
+    <stop offset="100%" stop-color="#ff6b5e"/>
+  </linearGradient>
+  <linearGradient id="scanGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#2bdca0" stop-opacity="0"/>
+    <stop offset="50%" stop-color="#2bdca0" stop-opacity="0.9"/>
+    <stop offset="100%" stop-color="#2bdca0" stop-opacity="0"/>
+  </linearGradient>
+  <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
+    <path d="M0 0 H28 M0 0 V28" stroke="#11221d" stroke-width="1"/>
+  </pattern>
+  <clipPath id="frame">
+    <rect x="0" y="0" width="1200" height="320" rx="10"/>
+  </clipPath>
+</defs>
+
+<g clip-path="url(#frame)">
+  <rect x="0" y="0" width="1200" height="320" fill="#070b10"/>
+  <rect x="0" y="0" width="1200" height="320" fill="url(#grid)" opacity="0.55"/>
+
+  <!-- live scan sweep along the top edge -->
+  <rect id="scanbar" x="-220" y="0" width="220" height="3" fill="url(#scanGrad)"/>
+
+  <rect x="0.5" y="0.5" width="1199" height="319" rx="10" fill="none" stroke="#1c2b27" stroke-width="1.5"/>
+  <line x1="392" y1="34" x2="392" y2="286" stroke="#16201d" stroke-width="1.5"/>
+
+  <!-- ============ LEFT: rank-escalation ladder ============ -->
+  <text x="36" y="40" font-family="monospace" font-size="11" fill="#3f5750" letter-spacing="2">RANK ESCALATION</text>
+
+  <!-- ascending path through all eight ranks -->
+  <path id="rankPath" d="M58,264 L95,246 L132,226 L170,204 L208,180 L246,154 L284,124 L322,90"
+        fill="none" stroke="#27433a" stroke-width="2" opacity="0.6"/>
+
+  <!-- F -->
+  <circle cx="58" cy="264" r="6" fill="#0c1410" stroke="#3f5750" stroke-width="2"/>
+  <text x="74" y="268" font-family="monospace" font-size="11" font-weight="bold" fill="#3f5750">F</text>
+  <!-- D -->
+  <circle cx="95" cy="246" r="6.5" fill="#0c1410" stroke="#1f8f68" stroke-width="2" class="pulseSlow"/>
+  <text x="111" y="250" font-family="monospace" font-size="11" font-weight="bold" fill="#1f8f68">D</text>
+  <!-- C -->
+  <circle cx="132" cy="226" r="7" fill="#0c1410" stroke="#2bdca0" stroke-width="2" class="pulseSlow"/>
+  <text x="148" y="230" font-family="monospace" font-size="11" font-weight="bold" fill="#2bdca0">C</text>
+  <!-- B -->
+  <circle cx="170" cy="204" r="7.5" fill="#0c1410" stroke="#c9d14a" stroke-width="2" class="pulseMed"/>
+  <text x="186" y="208" font-family="monospace" font-size="11" font-weight="bold" fill="#c9d14a">B</text>
+  <!-- A -->
+  <circle cx="208" cy="180" r="8" fill="#0c1410" stroke="#ff9f5a" stroke-width="2" class="pulseMed"/>
+  <text x="224" y="184" font-family="monospace" font-size="11" font-weight="bold" fill="#ff9f5a">A</text>
+  <!-- S -->
+  <circle cx="246" cy="154" r="8.5" fill="#0c1410" stroke="#ff6b5e" stroke-width="2" class="pulseFast"/>
+  <text x="262" y="158" font-family="monospace" font-size="11" font-weight="bold" fill="#ff6b5e">S</text>
+  <!-- SS -->
+  <circle cx="284" cy="124" r="9.5" fill="#0c1410" stroke="#ff3b3b" stroke-width="2" class="pulseFast"/>
+  <text x="300" y="128" font-family="monospace" font-size="11" font-weight="bold" fill="#ff3b3b">SS</text>
+  <!-- SSS (extinction) -->
+  <g transform="translate(322,90)">
+    <circle r="11" fill="#1a0508" stroke="#ff1f3d" stroke-width="2.5" class="pulseFast"/>
+    <path d="M-4,1 L-1,5 L5,-5" fill="none" stroke="#ff1f3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle r="20" fill="none" stroke="#ff1f3d" stroke-width="2" opacity="0">
+      <animate attributeName="opacity" values="0;0;0.9;0" keyTimes="0;0.78;0.88;1" dur="2.4s" repeatCount="indefinite"/>
+      <animate attributeName="r" values="8;8;24;30" keyTimes="0;0.78;0.88;1" dur="2.4s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+  <text x="345" y="94" font-family="monospace" font-size="11" font-weight="bold" fill="#ff1f3d">SSS</text>
+
+  <!-- the appraisal beam climbing the ranks, shifting color as it escalates -->
+  <circle r="3.6" fill="#2bdca0">
+    <animateMotion dur="3.2s" repeatCount="indefinite" begin="0s" path="M58,264 L95,246 L132,226 L170,204 L208,180 L246,154 L284,124 L322,90"/>
+    <animate attributeName="fill" values="#2bdca0;#c9d14a;#ff6b5e;#ff1f3d" dur="3.2s" repeatCount="indefinite"/>
+  </circle>
+  <circle r="3.6" fill="#2bdca0">
+    <animateMotion dur="3.2s" repeatCount="indefinite" begin="-1.6s" path="M58,264 L95,246 L132,226 L170,204 L208,180 L246,154 L284,124 L322,90"/>
+    <animate attributeName="fill" values="#2bdca0;#c9d14a;#ff6b5e;#ff1f3d" dur="3.2s" repeatCount="indefinite" begin="-1.6s"/>
+  </circle>
+
+  <text x="36" y="300" font-family="monospace" font-size="9" fill="#2bdca0">&#9679; exploitable</text>
+  <text x="135" y="300" font-family="monospace" font-size="9" fill="#ff6b5e">&#9679; critical</text>
+  <text x="215" y="300" font-family="monospace" font-size="9" fill="#ff1f3d" class="caution">&#9679; extinction</text>
+
+  <!-- ============ RIGHT: identity + status ============ -->
+  <text x="420" y="142" font-family="'Courier New', monospace" font-size="46" font-weight="bold"
+        fill="url(#titleGrad)" letter-spacing="1">APPRAISAL: DEX</text>
+
+  <text x="420" y="174" font-family="monospace" font-size="15" fill="#7fe6c4" letter-spacing="2">
+    S-RANK APPRAISAL SKILL &#183; ANDROID BINARIES
+  </text>
+
+  <text x="420" y="202" font-family="monospace" font-size="13" fill="#8d9994" font-style="italic">
+    They called Appraisal a useless skill. Then I pointed it at an APK<tspan class="cursor">_</tspan>
+  </text>
+
+  <line x1="420" y1="222" x2="1164" y2="222" stroke="#16201d" stroke-width="1.5"/>
+
+  <!-- live indicator -->
+  <circle cx="1150" cy="40" r="5" fill="#ff5f56" class="pulseFast"/>
+  <text x="1150" y="60" font-family="monospace" font-size="10" fill="#5b6b66" text-anchor="middle" letter-spacing="1">ACTIVE</text>
+
+  <!-- status row -->
+  <circle cx="424" cy="246" r="3" fill="#2bdca0" class="pulseSlow"/>
+  <text x="436" y="250" font-family="monospace" font-size="11" fill="#2bdca0">SCANNING</text>
+
+  <text x="548" y="250" font-family="monospace" font-size="11" fill="#5b6b66">MIT LICENSE</text>
+  <text x="668" y="250" font-family="monospace" font-size="11" fill="#5b6b66">PYTHON 3.10+</text>
+  <text x="800" y="250" font-family="monospace" font-size="11" fill="#5b6b66">14 MODULES &#183; 6 CHAINS</text>
+  <text x="990" y="250" font-family="monospace" font-size="11" fill="#ff9f5a" class="caution">PoC READY</text>
+
+  <text x="420" y="272" font-family="monospace" font-size="10" fill="#3f5750">v1.0 &#183; OWASP Mobile Top 10 &#183; built by Rimu (rithinkrishnakv)</text>
+</g>
+</svg>

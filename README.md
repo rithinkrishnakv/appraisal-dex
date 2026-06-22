@@ -1,5 +1,9 @@
 <div align="center">
 
+<img src="banner.svg" alt="Appraisal: DEX — S-Rank Appraisal Skill for Android Binaries" width="100%" />
+
+<br/>
+
 # ⚔ Appraisal: DEX
 
 **Using My S-Rank Appraisal Skill to Expose Vulnerabilities in Android Binaries**
@@ -11,6 +15,16 @@
 [![OWASP Mobile Top 10](https://img.shields.io/badge/OWASP-Mobile%20Top%2010-red.svg)](docs/owasp_coverage.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-100%20passing-brightgreen.svg)](tests/)
+
+<sub>
+<a href="#what-it-does">What It Does</a> ·
+<a href="#the-rank-system">Rank System</a> ·
+<a href="#skill-modules">Skill Modules</a> ·
+<a href="#vulnerability-chain-detection">Chains</a> ·
+<a href="#installation">Install</a> ·
+<a href="#usage">Usage</a> ·
+<a href="#output">Output</a>
+</sub>
 
 </div>
 
@@ -31,19 +45,19 @@
 
 Appraisal: DEX is a professional-grade Android binary analysis tool. Drop an APK in. Get back:
 
-- Every vulnerability ranked on an **F → SSS** scale with **CVSS v3.1** scoring
-- **Vulnerability chains** — combinations that escalate to devastating impact
-- **Ready-to-run PoC artifacts**: `adb` commands, Frida scripts, HTML attack pages, Python exploits
-- **Complete OWASP Mobile Top 10** coverage across **14 skill modules**
-- **Interactive HTML report** with filtering, copy buttons, and chain highlighting
-- **Diff mode** to compare two APK versions — catch regressions before they ship
+- 🏆 Every vulnerability ranked on an **F → SSS** scale with **CVSS v3.1** scoring
+- ⚡ **Vulnerability chains** — combinations that escalate to devastating impact
+- 🛠 **Ready-to-run PoC artifacts**: `adb` commands, Frida scripts, HTML attack pages, Python exploits
+- 🛡 **Complete OWASP Mobile Top 10** coverage across **14 skill modules**
+- 📊 **Interactive HTML report** with filtering, copy buttons, and chain highlighting
+- 🔁 **Diff mode** to compare two APK versions — catch regressions before they ship
 
 ---
 
 ## The Rank System
 
 | Rank | Class | CVSS | What it means |
-|------|-------|------|---------------|
+|:---:|------|------|---------------|
 | `F` | Informational | 0.0 | Noise |
 | `D` | Hardening | < 3.0 | Security debt |
 | `C` | Low | < 5.0 | Needs effort to exploit |
@@ -53,9 +67,15 @@ Appraisal: DEX is a professional-grade Android binary analysis tool. Drop an APK
 | `SS` | Devastating | < 10.0 | Vulnerability chain |
 | `SSS` | Extinction | 10.0 | Supply chain impact |
 
+<div align="center">
+<img src="rank-scale.svg" alt="Rank scale from F (noise) to SSS (extinction)" width="100%" />
+</div>
+
 ---
 
 ## Skill Modules
+
+`[PASSIVE]` reads manifest/strings only · `[ACTIVE]` traces real exploit paths · `[UNIQUE]` no other scanner does this · `[HIDDEN]` surfaces what's *not* declared
 
 ### Core Skills
 
@@ -73,7 +93,7 @@ Appraisal: DEX is a professional-grade Android binary analysis tool. Drop an APK
 ### OWASP Mobile Top 10 Skills
 
 | OWASP | Type | Module | Detects |
-|-------|------|--------|---------|
+|:---:|------|------|---------|
 | **M1** | `[PASSIVE]` | **Credential Sight** | Hardcoded passwords/tokens/API keys/connection strings; config files in APK; Basic Auth headers; SharedPreferences plaintext creds; credential logging |
 | **M2** | `[HIDDEN]` | **Supply Chain Sentinel** | Debug/unsigned APKs; debug certs; Janus v1-only signing (CVE-2017-13156); mapping.txt leakage; build path leakage; repackaging indicators; dependency confusion; test code in release |
 | **M3** | `[ACTIVE]` | **Auth Breach** | Client-side isAdmin/isPremium flags; biometric bypass without CryptoObject + Frida script; JWT `alg=none`; hardcoded JWT secret; session tokens in plaintext SharedPrefs; Intent-based auth bypass |
@@ -94,7 +114,7 @@ Appraisal: DEX is a professional-grade Android binary analysis tool. Drop an APK
 Six chains are automatically detected and escalated in rank:
 
 | ⚡ Chain | Modules | Escalated To | Impact |
-|---------|---------|-------------|--------|
+|---------|---------|:-:|--------|
 | Debuggable + Exported Activity | MANIFEST-001 + COMP-ACT | `SS` | Full data exfiltration, no root needed |
 | No Cert Pinning + Taint Flow | BINARY-NOPIN + TAINT | `SS` | Confirmed MitM + data theft |
 | Custom Deep Link + JS WebView | DEEPLINK + TAINT-WEBVIEW-JS | `SS` | One-click XSS, cookie theft |
