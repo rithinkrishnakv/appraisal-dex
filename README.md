@@ -2,6 +2,16 @@
 
 <img src="banner.svg" alt="Appraisal: DEX — S-Rank Appraisal Skill for Android Binaries" width="100%" />
 
+<div align="center">
+
+[![Appraisal DEX CI](https://img.shields.io/github/actions/workflow/status/rithinkrishnakv/appraisal-dex/ci.yml?branch=main&label=APPRAISAL%20DEX%20CI&color=1685FF&labelColor=0B1238&style=flat-square)](https://github.com/rithinkrishnakv/appraisal-dex/actions)
+[![Python](https://img.shields.io/badge/PYTHON-3.10%2B-1685FF?labelColor=0B1238&style=flat-square)](https://python.org)
+[![OWASP](https://img.shields.io/badge/OWASP-MOBILE%20TOP%2010-7B2CFF?labelColor=0B1238&style=flat-square)](https://owasp.org/www-project-mobile-top-10/)
+[![License](https://img.shields.io/badge/LICENSE-MIT-D81BFF?labelColor=0B1238&style=flat-square)](LICENSE)
+[![Tests](https://img.shields.io/badge/TESTS-100%20PASSING-1685FF?labelColor=0B1238&style=flat-square)](tests/)
+
+</div>
+
 <br/>
 
 # ⚔ Appraisal: DEX
@@ -9,12 +19,6 @@
 **Using My S-Rank Appraisal Skill to Expose Vulnerabilities in Android Binaries**
 
 *by [Rimu](https://github.com/rithinkrishnakv)*
-
-[![CI](https://github.com/rithinkrishnakv/appraisal-dex/actions/workflows/ci.yml/badge.svg)](https://github.com/rithinkrishnakv/appraisal-dex/actions)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
-[![OWASP Mobile Top 10](https://img.shields.io/badge/OWASP-Mobile%20Top%2010-red.svg)](docs/owasp_coverage.md)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-100%20passing-brightgreen.svg)](tests/)
 
 <sub>
 <a href="#what-it-does">What It Does</a> ·
