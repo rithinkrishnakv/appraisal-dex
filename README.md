@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="banner.svg" alt="Appraisal: DEX — S-Rank Appraisal Skill for Android Binaries" width="100%" />
+<img src="banner.png" alt="Appraisal: DEX — S-Rank Appraisal Skill for Android Binaries" width="100%" />
 
 <div align="center">
 
